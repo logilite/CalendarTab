@@ -15,6 +15,7 @@ import org.compiere.model.DataStatusListener;
 import org.compiere.model.GridTab;
 import org.compiere.model.GridWindow;
 import org.compiere.util.CLogger;
+import org.compiere.util.Util;
 import org.zkoss.zk.ui.Page;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.Events;
@@ -62,12 +63,18 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 			log.log(Level.SEVERE, "Parent Tab not found");
 			throw new AdempiereException("Parent Tab not found");
 		}
-
-		calendarboard = new CalendarWindow(gridTab.getParentTab().getAD_Table_ID(), gridTab.getParentTab()
-				.getRecord_ID());
+		calendarboard = new CalendarWindow(gridTab.getParentTab().getAD_Table_ID(), getC_BPartner_ID());
 
 		gridTab.addDataStatusListener(this);
 		this.appendChild(calendarboard);
+	}
+
+	public int getC_BPartner_ID()
+	{
+		if (Util.isEmpty(get_ValueAsString("C_BPartner_ID"), true))
+			return 0;
+		else
+			return Integer.parseInt(get_ValueAsString("C_BPartner_ID"));
 	}
 
 	@Override
@@ -143,7 +150,7 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	public void refresh()
 	{
 		calendarboard.setAD_Table_ID(gridTab.getParentTab().getAD_Table_ID());
-		calendarboard.setC_BPartner_ID(gridTab.getParentTab().getRecord_ID());
+		calendarboard.setC_BPartner_ID(getC_BPartner_ID());
 	}
 
 	@Override

@@ -492,15 +492,15 @@ public class ContactActivityWindow extends Window implements EventListener<Event
 		dbxStartDate.setValue(ce.getBeginDate());
 		dbxEndDate.setValue(ce.getEndDate());
 
-		Events.sendEvent(Events.ON_CHANGE, this, activityRelatedTo);
+		// Set default
 		activityRelatedTo.setValue(X_C_ContactActivity.C_CONTACTACTIVITYRELATEDTO_BusinessPartner);
 		bpartnerField.setValue(calWindow.getC_BPartner_ID());
-		
+
 		activityRelatedTo.setReadWrite(false);
 		bpartnerField.setReadWrite(false);
 		chbxCreateLead.setEnabled(false);
 		chbxCreateOpportunity.setEnabled(false);
-		
+
 		salesOpportunityField.setValue("");
 		contactField.setValue("");
 		leadField.setValue("");
@@ -509,6 +509,7 @@ public class ContactActivityWindow extends Window implements EventListener<Event
 		specialRow.removeChild(salesOpportunityField.getComponent());
 		specialRow.appendChild(bpartnerField.getComponent());
 		bpartnerField.addValueChangeListener(this);
+		newBPValue(calWindow.getC_BPartner_ID()); 
 	}
 
 	public void initSaleStages(){
@@ -1110,44 +1111,50 @@ public class ContactActivityWindow extends Window implements EventListener<Event
 		{
 			if ((Integer) e.getNewValue() != null)
 			{
-				if (lblcontact != null)
-					newLeadLabelRow.removeChild(lblcontact);
-				if (bpcontact != null)
-					newLeadLabelRow.removeChild(bpcontact.getComponent());
-
-				try
-				{
-					int ad_user_id = Env.getContextAsInt(Env.getCtx(), 9999, Env.TAB_INFO, "AD_User_ID");
-					if (ad_user_id == 0)
-					{
-						ad_user_id = DB.getSQLValue(null, "SELECT AD_User_ID FROM AD_USER WHERE C_Bpartner_ID="
-								+ (Integer) e.getNewValue());
-					}
-					MUser user = new MUser(Env.getCtx(), ad_user_id, null);
-
-					MLookup lookup = MLookupFactory.get(Env.getCtx(), 0, COLUMNID_AD_USER_ID, DisplayType.TableDir,
-							Env.getLanguage(Env.getCtx()), X_AD_User.COLUMNNAME_AD_User_ID, 0, true, " C_Bpartner_ID="
-									+ (Integer) e.getNewValue());
-					bpcontact = new WTableDirEditor(X_AD_User.COLUMNNAME_AD_User_ID, false, false, true, lookup);
-					for (int i = 0; i < bpcontact.getComponent().getItemCount(); i++)
-					{
-						if ((Integer) bpcontact.getComponent().getItemAtIndex(i).getValue() == user.getAD_User_ID())
-						{
-							bpcontact.getComponent().setSelectedIndex(i);
-							break;
-						}
-					}
-					newLeadLabelRow.appendChild(lblcontact);
-					newLeadLabelRow.appendChild(bpcontact.getComponent());
-				}
-				catch (Exception ex)
-				{
-					log.log(Level.SEVERE, "BP Contact not found.");
-				}
+				int C_BPartner_ID = (Integer) e.getNewValue();
+				newBPValue(C_BPartner_ID);
 			}
 
 		}
 
+	}
+
+	private void newBPValue(int C_BPartner_ID)
+	{
+		if (lblcontact != null)
+			newLeadLabelRow.removeChild(lblcontact);
+		if (bpcontact != null)
+			newLeadLabelRow.removeChild(bpcontact.getComponent());
+
+		try
+		{
+			int ad_user_id = Env.getContextAsInt(Env.getCtx(), 9999, Env.TAB_INFO, "AD_User_ID");
+			if (ad_user_id == 0)
+			{
+				ad_user_id = DB.getSQLValue(null, "SELECT AD_User_ID FROM AD_USER WHERE C_Bpartner_ID="
+						+ C_BPartner_ID);
+			}
+			MUser user = new MUser(Env.getCtx(), ad_user_id, null);
+
+			MLookup lookup = MLookupFactory.get(Env.getCtx(), 0, COLUMNID_AD_USER_ID, DisplayType.TableDir,
+					Env.getLanguage(Env.getCtx()), X_AD_User.COLUMNNAME_AD_User_ID, 0, true, " C_Bpartner_ID="
+							+ C_BPartner_ID);
+			bpcontact = new WTableDirEditor(X_AD_User.COLUMNNAME_AD_User_ID, false, false, true, lookup);
+			for (int i = 0; i < bpcontact.getComponent().getItemCount(); i++)
+			{
+				if ((Integer) bpcontact.getComponent().getItemAtIndex(i).getValue() == user.getAD_User_ID())
+				{
+					bpcontact.getComponent().setSelectedIndex(i);
+					break;
+				}
+			}
+			newLeadLabelRow.appendChild(lblcontact);
+			newLeadLabelRow.appendChild(bpcontact.getComponent());
+		}
+		catch (Exception ex)
+		{
+			log.log(Level.SEVERE, "BP Contact not found.");
+		}
 	}
 	
 	public void markSalesRep(int C_ContactActivity_ID,int AD_User_ID,ArrayList<ValueNamePair> SalesReps)

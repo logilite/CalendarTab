@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: CalendarTab
+Bundle-SymbolicName: com.adaxa.calendarTab;singleton:=true
+Bundle-Version: 1.0.1.qualifier
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
+Bundle-Vendor: ADAXA
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: org.compiere.apps,
+ org.osgi.framework;version="1.3.0"
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.adempiere.base;bundle-version="3.1.0",
+ org.adempiere.ui.zk,
+ org.adempiere.plugin.utils;bundle-version="3.1.0",
+ org.zkoss.zk.library;bundle-version="7.0.7"
+Service-Component: OSGI-INF/*.xml

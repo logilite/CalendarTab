@@ -15,6 +15,7 @@ package com.adaxa.calendartab.webui.tabs;
 
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -30,6 +31,7 @@ import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.component.Textbox;
 import org.adempiere.webui.component.Window;
+import org.adempiere.webui.dashboard.DPCalendar;
 import org.adempiere.webui.editor.WSearchEditor;
 import org.adempiere.webui.editor.WTableDirEditor;
 import org.adempiere.webui.window.FDialog;
@@ -269,8 +271,11 @@ public class RequestWindow extends Window implements EventListener<Event> {
 		borderlayout.appendChild(southPane);
 		southPane.appendChild(confirmPanel);
 		
-		dbxStartPlan.setValue(ce.getBeginDate());
-		dbxCompletePlan.setValue(ce.getEndDate());
+		dbxStartPlan.getTimebox().setFormat(DPCalendar.getTimeFormat());
+		dbxCompletePlan.getTimebox().setFormat(DPCalendar.getTimeFormat());
+
+		dbxStartPlan.setValue(new Date(ce.getBeginDate().getTime() + DPCalendar.getStartTimeHour()));
+		dbxCompletePlan.setValue(new Date(ce.getBeginDate().getTime() + DPCalendar.getEndTimeHour()));
 	}
 	
 	public void onEvent(Event e) throws Exception {

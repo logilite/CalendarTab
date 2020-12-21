@@ -10,7 +10,6 @@ import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.component.Window;
-import org.adempiere.webui.dashboard.ResourceAssignmentWindow;
 import org.adempiere.webui.session.SessionManager;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
@@ -22,30 +21,30 @@ import org.zkoss.zul.Button;
 import org.zkoss.zul.North;
 
 /**
- * 
- * @author swiki
+ * @author    swiki
  * @updatedBy Sachin Bhimani
  */
-public class DecisionWindow extends Window implements EventListener<Event> 
+public class DecisionWindow extends Window implements EventListener<Event>
 {
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -1725213080027893200L;
+	private static final long	serialVersionUID	= -1725213080027893200L;
 
-	private Button requestBtn, activityBtn, resourceBtn;
-	CalendarsEvent calendarsEvent;
+	private Button				requestBtn;
+	CalendarsEvent				calendarsEvent;
 
-	Window parent;
+	Window						parent;
 
 	/**
 	 * Main Constructor
+	 * 
 	 * @param ce
 	 * @param parent
 	 */
-	public DecisionWindow(CalendarsEvent ce, Window parent) {
-
+	public DecisionWindow(CalendarsEvent ce, Window parent)
+	{
 		super();
 
 		this.parent = parent;
@@ -60,17 +59,9 @@ public class DecisionWindow extends Window implements EventListener<Event>
 		this.setClosable(true);
 		this.calendarsEvent = ce;
 
-		requestBtn = new Button(Msg.getMsg(ctx, "CreateNew2")); 
+		requestBtn = new Button(Msg.getMsg(ctx, "Create Request"));
 		requestBtn.addEventListener(Events.ON_CLICK, this);
 		requestBtn.setWidth("170px");
-
-		activityBtn = new Button(Msg.getMsg(ctx, "ActivityNew"));
-		activityBtn.addEventListener(Events.ON_CLICK, this);
-		activityBtn.setWidth("170px");
-
-		resourceBtn = new Button(Msg.getMsg(ctx, "ResourceAssignemntNew"));
-		resourceBtn.addEventListener(Events.ON_CLICK, this);
-		resourceBtn.setWidth("170px");
 
 		Grid grid = GridFactory.newGridLayout();
 
@@ -87,14 +78,6 @@ public class DecisionWindow extends Window implements EventListener<Event>
 		rows.appendChild(row);
 		row.appendChild(requestBtn);
 
-		row = new Row();
-		rows.appendChild(row);
-		row.appendChild(activityBtn);
-
-		row = new Row();
-		rows.appendChild(row);
-		row.appendChild(resourceBtn);
-
 		Borderlayout borderlayout = new Borderlayout();
 		this.appendChild(borderlayout);
 		borderlayout.setHflex("1");
@@ -110,26 +93,16 @@ public class DecisionWindow extends Window implements EventListener<Event>
 	}
 
 	@Override
-	public void onEvent(Event event) throws Exception {
+	public void onEvent(Event event) throws Exception
+	{
 
 		String type = event.getName();
 
-		if (type.equals(Events.ON_CLICK)) {
-			if (event.getTarget() == requestBtn){
+		if (type.equals(Events.ON_CLICK))
+		{
+			if (event.getTarget() == requestBtn)
+			{
 				RequestWindow requestWin = new RequestWindow(calendarsEvent, parent);
-				SessionManager.getAppDesktop().showWindow(requestWin);
-				setVisible(false);
-				this.detach();
-			}
-			else if (event.getTarget() == activityBtn){
-				ContactActivityWindow requestWin = new ContactActivityWindow(calendarsEvent, parent);
-				SessionManager.getAppDesktop().showWindow(requestWin);
-				setVisible(false);
-				this.detach();
-			}
-			else if (event.getTarget() == resourceBtn){
-
-				ResourceAssignmentWindow requestWin = new ResourceAssignmentWindow(calendarsEvent, parent);
 				SessionManager.getAppDesktop().showWindow(requestWin);
 				setVisible(false);
 				this.detach();

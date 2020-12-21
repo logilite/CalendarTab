@@ -1,5 +1,6 @@
 package com.adaxa.calendartab.webui.adwindow;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -279,7 +280,7 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	@Override
 	public List<Button> getToolbarButtons()
 	{
-		return null;
+		return new ArrayList<Button>();
 	}
 
 	@Override
@@ -309,5 +310,11 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	public void onPageDetached(Page page)
 	{
 		super.onPageDetached(page);
+	}
+
+	@Override
+	public boolean isEnableQuickFormButton()
+	{
+		return false;
 	}
 }

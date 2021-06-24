@@ -62,6 +62,7 @@ public class DecisionWindow extends Window implements EventListener<Event>
 		requestBtn = new Button(Msg.getMsg(ctx, "Create Request"));
 		requestBtn.addEventListener(Events.ON_CLICK, this);
 		requestBtn.setWidth("170px");
+		requestBtn.setHeight("50px");
 
 		Grid grid = GridFactory.newGridLayout();
 

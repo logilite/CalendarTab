@@ -29,7 +29,6 @@ import org.adempiere.webui.session.SessionManager;
 import org.adempiere.webui.theme.ThemeManager;
 import org.adempiere.webui.util.UserPreference;
 import org.compiere.model.MSysConfig;
-import org.compiere.model.MUser;
 import org.compiere.model.X_R_RequestType;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -37,7 +36,6 @@ import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.compiere.util.Util;
-import org.compiere.util.ValueNamePair;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.encoders.EncoderUtil;
@@ -232,13 +230,19 @@ public class CalendarWindow extends Window implements EventListener<Event>, Valu
 
 		if (type.equals("onRefresh"))
 		{
+			isNeedToRender = true;
 			renderCalenderEvent();
+			isNeedToRender = false;
 		}
 
 		if (type.equals(Events.ON_CLICK))
 		{
 			if (e.getTarget() == btnRefresh)
+			{
+				isNeedToRender = true;
 				renderCalenderEvent();
+				isNeedToRender = false;
+			}
 			else if (e.getTarget() == btnCurrentDate)
 				btnCurrentDateClicked();
 			else if (e.getTarget() == btnSwitchTimeZone)
@@ -293,7 +297,9 @@ public class CalendarWindow extends Window implements EventListener<Event>, Valu
 		{
 			if (e.getTarget() == lbxRequestTypes)
 			{
+				isNeedToRender = true;
 				renderCalenderEvent();
+				isNeedToRender = false;
 			}
 			else if (e.getTarget() == lbxFDOW)
 			{
@@ -547,23 +553,11 @@ public class CalendarWindow extends Window implements EventListener<Event>, Valu
 		if (C_BPartner_ID == 0)
 			return events;
 
-		ArrayList<ValueNamePair> users = new ArrayList<>();
-		MUser user = MUser.get(Env.getAD_User_ID(Env.getCtx()));
-		users.add(new ValueNamePair("" + user.getAD_User_ID(), user.getName()));
-
-		String userStr = "";
-		{
-			for (ValueNamePair i : users)
-				userStr += Integer.parseInt(i.getID()) + ",";
-			userStr = userStr.substring(0, userStr.length() - 1);
-		}
-
 		String sql = "SELECT DISTINCT r.R_Request_ID, r.DateNextAction, "	+ "r.DateStartPlan, r.DateCompletePlan, "
 						+ "u.Name || '-' || r.Summary AS Summary, rt.HeaderColor, rt.ContentColor, rt.R_RequestType_ID "
 						+ "FROM R_Request r " + "INNER JOIN R_RequestType rt ON rt.R_RequestType_ID=r.R_RequestType_ID "
 						+ "INNER JOIN AD_User u ON u.AD_User_ID=r.SalesRep_ID "
 						+ "WHERE r.R_RequestType_ID = rt.R_RequestType_ID ";
-		sql += "AND (r.SalesRep_ID IN (" + userStr + ")) ";
 		sql += "AND r.AD_Client_ID = ? AND r.IsActive = 'Y' "
 				+ "AND (r.R_Status_ID IS NULL OR r.R_Status_ID IN (SELECT R_Status_ID FROM R_Status WHERE IsClosed='N')) ";
 
@@ -571,7 +565,10 @@ public class CalendarWindow extends Window implements EventListener<Event>, Valu
 			sql += "AND rt.R_RequestType_ID = ? ";
 
 		if (C_BPartner_ID > 0)
-			sql += "AND r.C_BPartner_ID = ? ";
+		{
+			sql += " AND ( r.SalesRep_ID IN (SELECT AD_User_ID FROM AD_User WHERE C_BPartner_ID = ?) ";
+			sql += " OR r.C_BPartner_ID = ? ) ";
+		}
 
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -584,7 +581,10 @@ public class CalendarWindow extends Window implements EventListener<Event>, Valu
 			if (RequestTypeID > 0)
 				ps.setInt(count++, RequestTypeID);
 			if (C_BPartner_ID > 0)
+			{
 				ps.setInt(count++, C_BPartner_ID);
+				ps.setInt(count++, C_BPartner_ID);
+			}
 
 			rs = ps.executeQuery();
 

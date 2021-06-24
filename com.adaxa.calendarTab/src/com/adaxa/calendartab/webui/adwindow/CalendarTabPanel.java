@@ -6,29 +6,35 @@ import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.webui.adwindow.ADTreePanel;
+import org.adempiere.webui.adwindow.ADWindow;
+import org.adempiere.webui.adwindow.ADWindowToolbar;
 import org.adempiere.webui.adwindow.AbstractADWindowContent;
 import org.adempiere.webui.adwindow.DetailPane;
 import org.adempiere.webui.adwindow.GridView;
 import org.adempiere.webui.adwindow.IADTabpanel;
 import org.adempiere.webui.component.Panel;
+import org.adempiere.webui.component.ToolBarButton;
 import org.compiere.model.DataStatusEvent;
 import org.compiere.model.DataStatusListener;
 import org.compiere.model.GridTab;
-import org.compiere.model.GridWindow;
 import org.compiere.util.CLogger;
+import org.compiere.util.Env;
+import org.compiere.util.Msg;
 import org.compiere.util.Util;
+import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Page;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.Button;
+import org.zkoss.zul.Toolbar;
 
 import com.adaxa.calendartab.webui.tabs.CalendarWindow;
 
 /**
  * Calendar Tab Panel
  * 
- * @author Sachin D Bhimani
- * @since Mar 07, 2017
+ * @author Sachin Bhimani @ Logilite Technologies
+ * @since  Mar 07, 2017
  */
 public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusListener
 {
@@ -42,32 +48,34 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 
 	private AbstractADWindowContent	adWindowContent		= null;
 	private GridTab					gridTab				= null;
-	private int						windowNumber		= 0;
-	private GridWindow				gridWindow			= null;
 	private CalendarWindow			calendarboard		= null;
-	private boolean					detailPaneMode		= false;
 	private DetailPane				detailPane			= null;
 	private GridView				listPanel			= new GridView();
+
+	private boolean					detailPaneMode		= false;
 	private boolean					activated			= false;
+
+	private int						windowNumber		= 0;
 	private int						tabNo;
 
 	@Override
-	public void init(AbstractADWindowContent winPanel, int windowNo, GridTab gridTab, GridWindow gridWindow)
+	public void init(AbstractADWindowContent winPanel, GridTab gridTab)
 	{
 		this.adWindowContent = winPanel;
-		this.windowNumber = windowNo;
+		this.windowNumber = winPanel.getWindowNo();
 		this.gridTab = gridTab;
-		this.gridWindow = gridWindow;
 
 		if (gridTab.getParentTab() == null)
 		{
 			log.log(Level.SEVERE, "Parent Tab not found");
 			throw new AdempiereException("Parent Tab not found");
 		}
+
 		calendarboard = new CalendarWindow(gridTab.getParentTab().getAD_Table_ID(), getC_BPartner_ID());
+		this.appendChild(calendarboard);
 
 		gridTab.addDataStatusListener(this);
-		this.appendChild(calendarboard);
+
 	}
 
 	public int getC_BPartner_ID()
@@ -111,7 +119,7 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	@Override
 	public boolean isCurrent()
 	{
-		return gridTab.isCurrent();
+		return gridTab != null ? gridTab.isCurrent() : false;
 	}
 
 	@Override
@@ -133,14 +141,27 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	}
 
 	@Override
-	public void activate(boolean b)
+	public void activate(boolean isActivate)
 	{
 		activated = true;
 		Event event = new Event(ON_ACTIVATE_EVENT, this, activated);
 		Events.postEvent(event);
-		if (b)
+
+		if (isActivate)
+		{
 			calendarboard.isNeedToRender = true;
-	}
+
+			//
+			if (adWindowContent.getADTab().getSelectedTabpanel().getDetailPane() != null)
+			{
+				setDetailPane(adWindowContent.getADTab().getSelectedTabpanel().getDetailPane());
+			}
+		}
+		else
+		{
+			updateToolbar(adWindowContent.getToolbar());
+		}
+	} // activate
 
 	@Override
 	public void query()
@@ -158,7 +179,16 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	public void query(boolean currentRows, int currentDays, int maxRows)
 	{
 		if (!isVisible() || (isVisible() && isActivated()))
-			calendarboard.renderCalenderEvent();
+		{
+			// calendarboard.renderCalenderEvent();
+			gridTab.query(currentRows, currentDays, maxRows);
+
+			// Empty status show
+			if (adWindowContent.getADTab().getSelectedTabpanel().getDetailPane() != null)
+			{
+				adWindowContent.getADTab().getSelectedTabpanel().getDetailPane().setStatusMessage("1 " + Msg.getMsg(Env.getCtx(), "Records"), false);
+			}
+		}
 	}
 
 	@Override
@@ -190,7 +220,7 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	@Override
 	public boolean isGridView()
 	{
-		return listPanel.isVisible();
+		return false;
 	}
 
 	@Override
@@ -204,6 +234,15 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	{
 		this.detailPaneMode = detailMode;
 		this.setVflex("true");
+
+		// Show empty record count info for Calendar
+		if (!detailMode)
+		{
+			// Disabling Navigation buttons
+			adWindowContent.getBreadCrumb().enableFirstNavigation(false);
+			adWindowContent.getBreadCrumb().enableLastNavigation(false);
+			adWindowContent.getBreadCrumb().setStatusDB(null);
+		}
 	}
 
 	@Override
@@ -239,7 +278,7 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	@Override
 	public int getTabNo()
 	{
-		return this.tabNo; // gridTab.getTabNo();
+		return this.tabNo;
 	}
 
 	@Override
@@ -301,11 +340,6 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 		return windowNumber;
 	}
 
-	public GridWindow getGridWindow()
-	{
-		return gridWindow;
-	}
-
 	@Override
 	public void onPageDetached(Page page)
 	{
@@ -317,4 +351,96 @@ public class CalendarTabPanel extends Panel implements IADTabpanel, DataStatusLi
 	{
 		return false;
 	}
+
+	@Override
+	public void updateToolbar(ADWindowToolbar toolbar)
+	{
+		if (activated)
+		{
+			toolbar.enableActiveWorkflows(false);
+			toolbar.enableArchive(false);
+			toolbar.enableAttachment(false);
+			toolbar.enableChat(false);
+			toolbar.enableCopy(false);
+			toolbar.enableCSVImport(false);
+			toolbar.enableCustomize(false);
+			toolbar.enableDelete(false);
+			toolbar.enableExport(false);
+			toolbar.enableFileImport(false);
+			toolbar.enableIgnore(false);
+			toolbar.enableNew(false);
+			toolbar.enablePostIt(false);
+			toolbar.enablePrint(false);
+			toolbar.enableProcessButton(false);
+			toolbar.enableQuickForm(false);
+			toolbar.enableReport(false);
+			toolbar.enableRefresh(false);
+			toolbar.enableRequests(false);
+			toolbar.enableSave(false);
+			toolbar.enableZoomAcross(false);
+		}
+
+		toolbar.enableFind(!activated);
+		toolbar.enableGridToggle(!activated);
+	} // updateToolbar
+
+	@Override
+	public void updateDetailToolbar(Toolbar toolbar)
+	{
+		ADWindow adwindow = ADWindow.findADWindow(this);
+		List<String> tabRestrictList = adwindow.getTabToolbarRestrictList(getGridTab().getAD_Tab_ID());
+		List<String> windowRestrictList = adwindow.getWindowToolbarRestrictList();
+
+		for (Component c : toolbar.getChildren())
+		{
+			if (c instanceof ToolBarButton)
+			{
+				ToolBarButton btn = (ToolBarButton) c;
+				if (DetailPane.BTN_NEW_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				else if (DetailPane.BTN_DELETE_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				else if (DetailPane.BTN_EDIT_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(false);
+				}
+				else if (DetailPane.BTN_SAVE_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				else if (DetailPane.BTN_CUSTOMIZE_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				else if (DetailPane.BTN_QUICK_FORM_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				else if (DetailPane.BTN_PROCESS_ID.equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				else if ("BtnToggle".equals(btn.getId()))
+				{
+					btn.setDisabled(true);
+				}
+				if (windowRestrictList.contains(btn.getId()))
+				{
+					btn.setVisible(false);
+				}
+				else if (tabRestrictList.contains(btn.getId()))
+				{
+					btn.setVisible(false);
+				}
+				else
+				{
+					btn.setVisible(true);
+				}
+			}
+		}
+	} // updateDetailToolbar
 }
